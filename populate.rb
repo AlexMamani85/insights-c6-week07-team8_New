@@ -20,29 +20,15 @@ def find(table, column, value)
   DB.exec(%[
     SELECT * FROM #{table} 
     WHERE #{column} = '#{value.gsub("'","''")}'; 
+    
     ]).first
 end
+# value.gsub("'","''") (linea 22)
 
 # for each row to books
 CSV.foreach("data.csv", headers: true) do |row|
 
 #dt: client_restaurant,  dish,  restaurant,  client
-
-    client_restaurant_data = {
-    "visit_date" => row["visit_date"],
-    "client_id" => client["id"],
-    "dish_id" => dish["id"],
-    "restaurant_id" => restaurant["id"]
-  }
-  client_restaurant = insert("client_restaurants", client_restaurant_data, "visit_date")
-
-  dish_data = {
-    "dish_name" => row["dish"],
-    "price" => row["price"],
-    "restaurant_id" => restaurant["id"]
-  }
-  publisher = insert("dishes", dish_data, "name")
-
   client_data = {
     "client_name" => row["client_name"],
     "age" => row["age"],
@@ -50,14 +36,31 @@ CSV.foreach("data.csv", headers: true) do |row|
     "occupation" => row["occupation"],
     "nationality" => row["nationality"]
   }
-  book = insert("clients", client_data, "client_name")
+  client = insert("client", client_data, "client_name")
 
-  restaurant_data = {
+    restaurant_data = {
     "restaurant_name" => row["restaurant_name"],
     "category" => row["category"],
     "city" => row["city"],
     "address" => row["address"]
   }
-  insert("books_genres", restaurant_data, "restaurant_name")
+  restaurant=insert("restaurant", restaurant_data, "restaurant_name")
 #   en book_genre no habia 3er elemento en insert 
+
+  dish_data = {
+    "dish_name" => row["dish"],
+    "price" => row["price"],
+    "restaurant_id" => restaurant["id"]
+  }
+  dish = insert("dish", dish_data, "dish_name")
+
+    client_restaurant_data = {
+    "visit_date" => row["visit_date"],
+    "client_id" => client["id"],
+    "dish_id" => dish["id"],
+    "restaurant_id" => restaurant["id"]
+  }
+  client_restaurant = insert("client_restaurant", client_restaurant_data)
+# en book_genre no habia 3er elemento en insert 
+# "visit_date" (quite a lo de arriba, 3er parametro)
 end
