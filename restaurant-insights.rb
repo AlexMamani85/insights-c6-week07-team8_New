@@ -54,217 +54,132 @@ class InsightApp
 
   end
 
-def search_restaurants(param) #top_publishers
-  #List of restaurants included in the research filter by ['' | category=string | city=string]"
-
-  column, value = param.split("=") unless param.nil?
-
-  case param
-  when ""
-
-    result = @db.exec(%[
-      select * from restaurant;
-    ])
-  when "category"
-
-    result = @db.exec(%[
-      select * from restaurant where category like INITCAP('%#{value}%'); 
-    ])
-  when "city"
-
-    result = @db.exec(%[
-      select * from restaurant where city like INITCAP('%#{value}%');
-    ])
-    
+  def print_results(result,prompt)
+    puts(result)
+    table = Terminal::Table.new
+    table.title = prompt
+    table.headings = result.fields
+    table.rows = result.values
+    puts table
   end
-  puts(result)
-  table = Terminal::Table.new
-  table.title = "List of restaurants included in the research filter by #{column} = #{value}"
-  table.headings = result.fields
-  table.rows = result.values
-  puts table
+
+def search_restaurants(param) #1
+  #List of restaurants included in the research filter by ['' | category=string | city=string]"
+  column = nil
+  column, value = param.split("=") unless param.nil?
+  select_text = "select restaurant_name, category, city from restaurant"
+
+  if column.nil?
+    result = @db.exec(%[
+      #{select_text};
+    ])
+  else
+    result = @db.exec(%[
+      #{select_text} where #{column} like INITCAP('%#{value}%'); 
+    ])
+  end
+
+  print_results(result,"List of restaurants included in the research filter by #{column} = #{value}")
+end
+
+def unique_dishes #2
+  result = @db.exec(%[
+    SELECT DISTINCT dish_name FROM dish ORDER BY dish_name;
+   ])
+
+  print_results(result,"List of dishes")
 
 end
 
-def unique_dishes
-
-
-end
-
-def distribution_clients(param)
-
-
+def distribution_clients(param) #3
+  column = nil
+  column, value = param.split("=") unless param.nil?
+  select_text = "select restaurant_name, category, city from restaurant"
+  
+  result = @db.exec(%[
+    SELECT #{value},COUNT(#{value}) AS cantidad,
+    CONCAT(ROUND(count(#{value}) * 100.0 / sum(count(#{value})) over(),1),'%') AS percentage 
+    FROM client GROUP BY #{value}
+    ORDER BY #{value};
+  ])
+  print_results(result,"Number and Distribution of Users")
 end
 
 def top_restaurants_visitors
 
-
+  result = @db.exec(%[
+    SELECT r.restaurant_name, COUNT(c.restaurant_id) AS visitors
+    FROM restaurant AS r
+    JOIN client_restaurant AS c ON c.restaurant_id = r.id
+    GROUP BY restaurant_name
+    ORDER BY visitors DESC
+    LIMIT 10;
+  ])
+  print_results(result, "Top 10 restaurants by visitors")
 end
 
 def top_restaurants_sales
-
+  result = @db.exec(%[
+    SELECT r.restaurant_name, SUM(d.price)
+    AS sales
+    FROM client_restaurant AS c
+    JOIN restaurant AS r ON c.restaurant_id = r.id
+    JOIN dish AS d ON c.dish_id = d.id
+    GROUP BY r.restaurant_name
+    ORDER BY sales DESC
+    LIMIT 10;
+  ])
+  print_results(result, "Top 10 restaurants by sales")
 
 end
 
 def top_restaurants_avg_expense #of their clients
-
+  result = @db.exec(%[
+    SELECT r.restaurant_name, ROUND(AVG(d.price),1)
+    AS avg_expense
+    FROM client_restaurant AS c
+    JOIN restaurant AS r ON c.restaurant_id = r.id
+    JOIN dish AS d ON c.dish_id = d.id
+    GROUP BY r.restaurant_name
+    ORDER BY avg_expense DESC
+    LIMIT 10;
+  ])
+  print_results(result, "Top 10 restaurants by average expense per user")
 
 end
 
 def avg_consumer_expense(param) #
-
-
+  result = @db.exec(%[
+    
+  ])
+  print_results(result, " ")
 end
 
 def sales_month(param)
+  column = nil
+  column, value = param.split("=") unless param.nil?
+
+  result = @db.exec(%[
+    SELECT TO_CHAR(c.visit_date, 'Month') AS month,
+    COUNT(d.price) AS sales
+    FROM client_restaurant AS c
+    JOIN dish AS d ON c.dish_id = d.id
+    GROUP BY month
+    ORDER BY month #{value};
+  ])
+  print_results(result, "Total sales by month")
+end
+
+def dishes_restaurant_lower_price #optional
 
 
 end
 
-def dishes_restaurant_lower_price
+def favorite_dish(param) #optional
 
 
 end
 
-def favorite_dish(param)
-
-
-end
-
-
-=begin 
-  def top_publishers
-    result = @db.exec("
-      SELECT * 
-      FROM publishers 
-      ORDER BY annual_revenue DESC
-      LIMIT 5;"
-    )
-    
-    table = Terminal::Table.new
-    table.title = "Top Publishers by Annual Revenue"
-    table.headings = result.fields
-    table.rows = result.values
-    puts table
-  end
-  
-  def count_books(param)
-    case param
-    when "author"
-      result = @db.exec(%[
-        SELECT  a.name AS Author, COUNT(*) AS count_books
-        FROM books AS b
-        JOIN authors AS a ON b.author_id = a.id
-        GROUP BY author
-        ORDER BY count_books DESC;
-      ])
-    when "publisher"
-      result = @db.exec(%[
-        SELECT  p.name AS publisher, COUNT(*) AS count_books
-        FROM books AS b
-        JOIN publishers AS p ON b.publisher_id = p.id
-        GROUP BY publisher
-        ORDER BY count_books DESC;
-      ])
-    when "genre"
-      result = @db.exec(%[
-        SELECT  g.name AS genre, COUNT(*) AS count_books
-        FROM books AS b
-        JOIN books_genres AS bg ON b.id = bg.book_id
-        JOIN genres AS g ON bg.genre_id = g.id
-        GROUP BY genre
-        ORDER BY count_books DESC;
-      ])
-    end
-
-    table = Terminal::Table.new
-    table.title = "Count Books"
-    table.headings = result.fields
-    table.rows = result.values
-    puts table
-  end
-  
-  def search_books(param)
-    column_ref = {
-      "title" => "title",
-      "author" => "authors.name",
-      "publisher" => "publishers.name"
-    }
-
-    column, value = param.split("=")
-    column = column_ref[column]
-
-    result = @db.exec(%[
-      SELECT 
-        books.id, 
-        books.title, 
-        books.pages, 
-        authors.name AS author, 
-        publishers.name AS publisher
-      FROM books
-      JOIN authors ON books.author_id = authors.id
-      JOIN publishers ON books.publisher_id = publishers.id
-      WHERE LOWER(#{column}) LIKE LOWER('%#{value}%');
-    ])
-
-    table = Terminal::Table.new
-    table.title = "Search Books"
-    table.headings = result.fields
-    table.rows = result.values
-    puts table
-  end
-
-  def other_methods(param)
-    column_ref = {
-      "title" => "title",
-      "author" => "authors.name",
-      "publisher" => "publishers.name"
-    }
-
-    column, value = param.split("=")
-    column = column_ref[column]
-
-    result = @db.exec(%[
-      SELECT 
-        books.id, 
-        books.title, 
-        books.pages, 
-        authors.name AS author, 
-        publishers.name AS publisher
-      FROM books
-      JOIN authors ON books.author_id = authors.id
-      JOIN publishers ON books.publisher_id = publishers.id
-      WHERE LOWER(#{column}) LIKE LOWER('%#{value}%');
-    ])
-
-    table = Terminal::Table.new
-    table.title = "Search Books"
-    table.headings = result.fields
-    table.rows = result.values
-    puts table
-  end
-
-  def other_methods_2(param)
-
-    column, value = param.split("=")
-    column = column_ref[column]
-
-    result = @db.exec(%[
-      SELECT 
-        books.id, 
-        books.title, 
-        books.pages, 
-        authors.name AS author, 
-        publishers.name AS publisher
-      FROM books
-      JOIN authors ON books.author_id = authors.id
-      JOIN publishers ON books.publisher_id = publishers.id
-      WHERE LOWER(#{column}) LIKE LOWER('%#{value}%');
-    ])
-
-  end
-
-=end
 end
 
 app = InsightApp.new
