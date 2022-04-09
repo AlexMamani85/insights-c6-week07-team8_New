@@ -26,8 +26,8 @@ end
 # value.gsub("'","''") (linea 22)
 
 # for each row to books
-CSV.foreach("data.csv", headers: true) do |row|
 
+CSV.foreach("data.csv", headers: true) do |row|
 #dt: client_restaurant,  dish,  restaurant,  client
   client_data = {
     "client_name" => row["client_name"],
@@ -52,7 +52,7 @@ CSV.foreach("data.csv", headers: true) do |row|
     "price" => row["price"],
     "restaurant_id" => restaurant["id"]
   }
-  dish = insert("dish", dish_data, "dish_name")
+  dish = insert("dish", dish_data)
 
     client_restaurant_data = {
     "visit_date" => row["visit_date"],
@@ -61,6 +61,5 @@ CSV.foreach("data.csv", headers: true) do |row|
     "restaurant_id" => restaurant["id"]
   }
   client_restaurant = insert("client_restaurant", client_restaurant_data)
-# en book_genre no habia 3er elemento en insert 
-# "visit_date" (quite a lo de arriba, 3er parametro)
+
 end
