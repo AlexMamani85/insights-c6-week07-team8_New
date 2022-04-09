@@ -11,7 +11,7 @@
     FROM dish GROUP BY dish_name HAVING COUNT(dish_name)<2) AS b ON
     a.dish_name = b.dish_name WHERE a.dish_name='Pizza';
 
-4. SELECT gender,COUNT(gender),ROUND(count(gender) * 100.0 / sum(count(gender)) over(),1) AS percentage 
+4. SELECT gender,COUNT(gender),CONCAT(ROUND(count(gender) * 100.0 / sum(count(gender)) over(),1),'%') AS percentage 
    FROM client GROUP BY gender;
 
 5.  SELECT r.restaurant_name, COUNT(c.restaurant_id) AS visitors
