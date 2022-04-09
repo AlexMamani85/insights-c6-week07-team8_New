@@ -147,11 +147,25 @@ def top_restaurants_avg_expense #of their clients
   print_results(result, "Top 10 restaurants by average expense per user")
 
 end
-
-def avg_consumer_expense(param) #
+#The average consumer expense group by [group=[age | gender | occupation | nationality]]"
+def avg_consumer_expense(param) # de 93
+  #column = nil
+  column, value = param.split("=") unless param.nil?
+  select_text = "select restaurant_name, category, city from restaurant"
+  
   result = @db.exec(%[
-    
+    select r.#{value}, ROUND(AVG(d.price), 1) AS avg_expense
+    FROM client AS r
+    FULL OUTER JOIN client_restaurant AS c ON c.restaurant_id = r.id
+    FULL OUTER JOIN dish AS d ON c.dish_id = d.id
+    GROUP BY r.#{value}
+    ORDER BY r.#{value}
+    ;
   ])
+
+
+
+
   print_results(result, " ")
 end
 
