@@ -79,7 +79,7 @@ def search_restaurants(param) #1
     ])
   end
 
-  print_results(result,"List of restaurants included in the research filter by #{column} = #{value}")
+  print_results(result,"List of restaurants | filter by #{column} = #{value}")
 end
 
 def unique_dishes #2
@@ -97,7 +97,7 @@ def distribution_clients(param) #3
   select_text = "select restaurant_name, category, city from restaurant"
   
   result = @db.exec(%[
-    SELECT #{value},COUNT(#{value}) AS cantidad,
+    SELECT #{value},COUNT(#{value}) AS count,
     CONCAT(ROUND(count(#{value}) * 100.0 / sum(count(#{value})) over(),1),'%') AS percentage 
     FROM client GROUP BY #{value}
     ORDER BY #{value};
@@ -154,19 +154,14 @@ def avg_consumer_expense(param) # de 93
   select_text = "select restaurant_name, category, city from restaurant"
   
   result = @db.exec(%[
-    select r.#{value}, ROUND(AVG(d.price), 1) AS avg_expense
-    FROM client AS r
-    FULL OUTER JOIN client_restaurant AS c ON c.restaurant_id = r.id
-    FULL OUTER JOIN dish AS d ON c.dish_id = d.id
-    GROUP BY r.#{value}
-    ORDER BY r.#{value}
-    ;
+    SELECT c.#{value}, ROUND(AVG(d.price),1) AS avg_expense
+    FROM client AS c
+    JOIN client_restaurant AS cr ON c.id = cr.client_id
+    JOIN dish AS d ON d.id = cr.dish_id
+    GROUP BY c.#{value} ORDER BY c.#{value};
   ])
 
-
-
-
-  print_results(result, " ")
+  print_results(result, "Average consumer expenses")
 end
 
 def sales_month(param)
