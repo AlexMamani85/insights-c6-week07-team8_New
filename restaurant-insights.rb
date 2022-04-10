@@ -185,13 +185,42 @@ def sales_month(param)
 end
 
 def dishes_restaurant_lower_price #optional
-
-
+  result = @db.exec(%[
+  select DISTINCT ON (d.dish_name) d.dish_name, r.restaurant_name, min(d.price) 
+  from dish as d
+  join restaurant as r on r.id=d.restaurant_id
+  group by d.dish_name,d.price, r.restaurant_name
+  ORDER BY d.dish_name;
+  ])
+  print_results(result, "list of dishes & restaurants where you can find it at a lower price")
 end
 
+# 10.The favorite dish for [age=number | gender=string | occupation=string | nationality=string]"
 def favorite_dish(param) #optional
 
-
+  column = nil
+  column, value = param.split("=") unless param.nil?
+  case column
+  when "age"
+    result = @db.exec(%[
+      select distinct on (c.#{column}) c.#{column}, d.dish_name
+      from client_restaurant as cr
+      join client as c on c.id=cr.client_id
+      join dish as d on d.id=cr.dish_id
+      where c.#{column} = #{value}
+      group by c.#{column}, d.dish_name;
+      ])
+  else
+    result = @db.exec(%[
+      select distinct on (c.#{column}) c.#{column}, d.dish_name
+      from client_restaurant as cr
+      join client as c on c.id=cr.client_id
+      join dish as d on d.id=cr.dish_id
+      where c.#{column}::varchar(255) like INITCAP('#{value}%')
+      group by c.#{column}, d.dish_name;
+      ])
+  end
+    print_results(result, "Favorite dish for #{column}=#{value}")
 end
 
 end
